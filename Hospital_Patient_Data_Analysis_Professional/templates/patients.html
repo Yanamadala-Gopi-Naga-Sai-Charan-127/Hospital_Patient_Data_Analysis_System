@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}MediAnalytics | Patient Records{% endblock %}
+{% block page_heading %}Patient Records{% endblock %}
+{% block content %}
+<div class="page-intro">
+    <div><div class="eyebrow">DATA EXPLORER</div><h2>Patient Records</h2><p>Search and filter the cleaned patient dataset.</p></div>
+    <a href="{{ url_for('download_cleaned') }}" class="btn btn-primary"><i class="bi bi-download me-2"></i>Export Cleaned CSV</a>
+</div>
+
+<div class="table-card">
+    <div class="toolbar">
+        <div class="search-box"><i class="bi bi-search"></i><input id="patientSearch" type="text" placeholder="Search ID, name, disease or department..."></div>
+        <select id="departmentFilter" class="form-select filter-select"><option value="">All Departments</option>{% for item in department_data %}<option value="{{ item }}">{{ item }}</option>{% endfor %}</select>
+        <select id="diseaseFilter" class="form-select filter-select"><option value="">All Diseases</option>{% for item in disease_data %}<option value="{{ item }}">{{ item }}</option>{% endfor %}</select>
+    </div>
+    <div class="table-responsive">
+        <table class="table professional-table" id="patientTable">
+            <thead><tr><th>Patient ID</th><th>Name</th><th>Age</th><th>Gender</th><th>Disease</th><th>Department</th></tr></thead>
+            <tbody>
+            {% for patient in patients %}
+            <tr data-department="{{ patient.Department }}" data-disease="{{ patient.Disease }}">
+                <td><span class="patient-id">{{ patient.PatientID }}</span></td>
+                <td><strong>{{ patient.Name }}</strong></td>
+                <td>{{ patient.Age }}</td>
+                <td><span class="gender-badge">{{ patient.Gender }}</span></td>
+                <td>{{ patient.Disease }}</td>
+                <td>{{ patient.Department }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div id="noResults" class="empty-state d-none"><i class="bi bi-search"></i><h5>No matching patients</h5><p>Try changing the search text or filters.</p></div>
+    <div class="table-footer"><span id="resultCount">{{ patients|length }} records</span><span>Cleaned dataset</span></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const search = document.getElementById("patientSearch");
+    const dep = document.getElementById("departmentFilter");
+    const disease = document.getElementById("diseaseFilter");
+    const rows = [...document.querySelectorAll("#patientTable tbody tr")];
+    const count = document.getElementById("resultCount");
+    const empty = document.getElementById("noResults");
+    function filter() {
+        const q = search.value.toLowerCase().trim();
+        let visible = 0;
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            const okQ = !q || text.includes(q);
+            const okD = !dep.value || row.dataset.department === dep.value;
+            const okDisease = !disease.value || row.dataset.disease === disease.value;
+            const show = okQ && okD && okDisease;
+            row.style.display = show ? "" : "none";
+            if (show) visible++;
+        });
+        count.textContent = visible + (visible === 1 ? " record" : " records");
+        empty.classList.toggle("d-none", visible !== 0);
+    }
+    [search, dep, disease].forEach(el => el.addEventListener("input", filter));
+});
+</script>
+{% endblock %}
